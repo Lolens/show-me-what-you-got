@@ -18,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Optional;
@@ -42,7 +43,11 @@ public class ShowMeWhatYouGotClient implements ClientModInitializer {
                     if (client.player.currentScreenHandler.getCursorStack().isEmpty() && focusedSlot != null && focusedSlot.hasStack()) {
                         // Open chat with sharing item
                         sharingItem = focusedSlot.getStack();
-                        client.setScreen(new ChatScreen(focusedSlot.getStack().toHoverableText().getString()));
+                        String itemNameString = focusedSlot.getStack().toHoverableText().getString();
+                        if (itemNameString.contains("§")) {
+                            itemNameString = itemNameString.replaceAll("§.", "");
+                        }
+                        client.setScreen(new ChatScreen(itemNameString));
                     }
                 }
                 if(sharedStack && (!isCtrlPressed || !isChatPressed)) {
@@ -56,9 +61,12 @@ public class ShowMeWhatYouGotClient implements ClientModInitializer {
         PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
         NbtCompound nbt = new NbtCompound();
         stack.writeNbt(nbt);
+        MinecraftClient client = MinecraftClient.getInstance();
+        assert client.player != null;
         buf.writeVarInt(start);
         buf.writeVarInt(end);
         buf.writeNbt(nbt);
+
         ClientPlayNetworking.send(ShowMeWhatYouGot.PACKET_ID, buf);
     }
 }
